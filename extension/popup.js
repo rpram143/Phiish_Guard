@@ -144,17 +144,29 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const res = await fetch(healthUrl, { signal: controller.signal });
+            
+            // Add cache: 'no-cache' and a timestamp to prevent browser cache issues
+            const res = await fetch(`${healthUrl}?t=${Date.now()}`, { 
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: controller.signal 
+            });
             clearTimeout(timeoutId);
 
             if (res.ok) {
                 setStatus("ONLINE", "safe");
                 setTimeout(() => setStatus("SECURED", "safe"), 3000);
             } else {
-                setStatus("OFFLINE", "risk");
+                setStatus(`OFFLINE (${res.status})`, "risk");
             }
         } catch (e) {
-            setStatus("ERROR", "risk");
+            console.error("Fetch error:", e);
+            if (e.name === 'AbortError') {
+                setStatus("TIMEOUT", "risk");
+            } else {
+                setStatus("UNREACHABLE", "risk");
+            }
         }
     });
 });

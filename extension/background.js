@@ -88,13 +88,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 async function scanPage(data, senderUrl) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for AI analysis
 
     try {
         const apiUrl = await getApiUrl(senderUrl);
+        console.log(`PhishGuard: Sending scan request to ${apiUrl} for ${data.url}`);
+        
         const response = await fetch(apiUrl, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            mode: "cors",
+            cache: "no-cache",
+            headers: { 
+                "Content-Type": "application/json" 
+            },
             body: JSON.stringify(data),
             signal: controller.signal
         });
@@ -102,10 +108,12 @@ async function scanPage(data, senderUrl) {
         clearTimeout(timeoutId);
 
         if (!response.ok) {
+            console.error(`PhishGuard: Backend returned ${response.status}`);
             throw new Error(`HTTP Error ${response.status}`);
         }
 
         const result = await response.json();
+        console.log(`PhishGuard: Scan complete for ${data.url}. Risk: ${result.risk_level}`);
 
         try {
             const score = Math.round(result.combined_score || 0).toString();
