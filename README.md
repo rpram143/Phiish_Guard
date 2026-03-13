@@ -66,51 +66,22 @@ git clone <repository-url>
 cd hackathon
 ```
 
-### 2. Backend Setup
+### 2. Run Everything
 
 ```bash
-cd backend
-pip install -r requirements.txt
-
-# Create .env file
-echo "GROQ_API_KEY=your_groq_api_key_here" > .env
-echo "BACKEND_HOST=0.0.0.0" >> .env
-echo "BACKEND_PORT=8000" >> .env
-
-# Start backend
-python3 -m app.main
+# Starts Backend, Dashboard, and Phishing Pages
+./run.sh
 ```
 
-### 3. Dashboard Setup
-
-```bash
-cd dashboard
-npm install
-npm run dev
-```
-
-### 4. Extension Setup
+### 3. Extension Setup
 
 1. Open Chrome and navigate to `chrome://extensions`
 2. Enable "Developer mode"
 3. Click "Load unpacked"
 4. Select the `extension/` directory
 5. Click the extension icon and configure:
-   - Backend API URL: `http://localhost:8000`
+   - Backend API URL: `http://localhost:8000` (or the IP shown in your terminal)
    - Click "Test Connection"
-
-### 5. Run Phishing Demo
-
-```bash
-# From project root
-./start_phishing_demo.sh
-```
-
-This starts:
-- Backend API (port 8000)
-- Dashboard (port 5173)
-- Email inbox simulator (port 3000)
-- Phishing pages (ports 3001-3003)
 
 ## 🎭 Phishing Demonstration
 
@@ -118,18 +89,10 @@ This starts:
 
 PhishGuard includes a complete phishing attack simulation for security awareness training:
 
-#### 📧 Realistic Phishing Emails
-- **PayPal Security Alert**: Account compromise from Nigeria
-- **Google Security Alert**: Unrecognized sign-in from Russia
-- **Microsoft Account Alert**: Suspicious activity from China
-
-#### 🎯 Interactive Email Inbox
-- Realistic email client interface
-- Multiple phishing scenarios
-- Educational annotations
-- Click-to-test functionality
-
 #### 🔍 Fake Login Pages
+- **PayPal**: http://localhost:3001
+- **Google**: http://localhost:3002
+- **Microsoft**: http://localhost:3003
 - Pixel-perfect clones of real sites
 - Professional branding and design
 - Educational warnings included
@@ -139,29 +102,37 @@ PhishGuard includes a complete phishing attack simulation for security awareness
 
 ```bash
 # Start all components
-./start_phishing_demo.sh
+./run.sh
 
-# Access points:
-# Email Inbox: http://192.168.56.1:3000/inbox.html
-# Dashboard:   http://localhost:5173
-# Backend:     http://192.168.56.1:8000
+# The script will output the exact URLs to use
 ```
 
 ### Demo Workflow
 
 1. **Without Protection**:
    - Disable PhishGuard extension
-   - Open email inbox
-   - Click on phishing email
-   - Click action button
+   - Visit one of the phishing pages (e.g., PayPal on port 3001)
    - See convincing fake login page
 
 2. **With Protection**:
    - Enable PhishGuard extension
-   - Click on phishing email
-   - Click action button
+   - Visit the same phishing page
    - Watch PhishGuard block the page
    - View threat analysis on dashboard
+
+### 🎤 Presentation Script
+
+**Opening (30 sec)**
+"I'll show you how easy it is to fall victim to modern phishing, and how PhishGuard AI protects you in real-time."
+
+**Without Protection (2 min)**
+"You receive an urgent email (e.g. via your real Gmail). It looks legitimate. You click the link... and you're on what looks exactly like PayPal. Without thinking, you could type your credentials... and they're stolen."
+
+**With Protection (3 min)**
+"Now let's enable PhishGuard. Same scenario, but watch... The extension intercepts immediately. It's analyzing the language, the visual design, the domain. Within milliseconds, it blocks the page. On the dashboard, we see exactly why: urgency manipulation, suspicious URL, no SSL certificate. The user is protected before they can make a mistake."
+
+**Closing (30 sec)**
+"PhishGuard AI uses advanced AI and multi-layer analysis to detect and block sophisticated phishing attacks in real-time. It's not just blocking known threats - it's identifying new, never-before-seen attacks."
 
 ### Educational Value
 
@@ -174,10 +145,8 @@ The demo shows:
 
 ## 📚 Documentation
 
-- **[PHISHING_DEMO_GUIDE.md](docs/PHISHING_DEMO_GUIDE.md)** - Complete demonstration guide
-- **[SETUP.md](docs/SETUP.md)** - Detailed setup instructions
-- **[DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)** - Quick presentation script
-- **[demo_pages/phishing_emails/README.md](demo_pages/phishing_emails/README.md)** - Email demo details
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and fixes
+- **[ARCHITECTURE_FLOWCHART.md](ARCHITECTURE_FLOWCHART.md)** - System architecture diagram
 
 ## 🔧 Configuration
 
