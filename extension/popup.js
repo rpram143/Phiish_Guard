@@ -10,19 +10,23 @@ function getDisplayHost(apiUrl) {
 }
 
 function normalizeApiUrl(inputValue) {
-    const raw = String(inputValue || "").trim();
+    let raw = String(inputValue || "").trim();
     if (!raw) return DEFAULT_API_URL;
 
     try {
-        const u = new URL(raw.startsWith('http') ? raw : 'http://' + raw);
-        const normalized = new URL(u.toString());
-        const path = normalized.pathname.replace(/\/+$/, "");
-        if (path !== "/api/v1/scan") {
-            normalized.pathname = "/api/v1/scan";
-            normalized.search = "";
-            normalized.hash = "";
+        // Add protocol if missing
+        if (!raw.startsWith('http')) {
+            raw = 'http://' + raw;
         }
-        return normalized.toString();
+        
+        const u = new URL(raw);
+        // If the path is just / or empty, append the full path
+        if (u.pathname === "/" || u.pathname === "") {
+            u.pathname = "/api/v1/scan";
+        }
+        
+        // Ensure no trailing slashes
+        return u.toString().replace(/\/+$/, "");
     } catch {
         return DEFAULT_API_URL;
     }
