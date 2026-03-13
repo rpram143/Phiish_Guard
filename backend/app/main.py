@@ -63,6 +63,5 @@ async def websocket_endpoint(websocket: WebSocket):
         manager.disconnect(websocket)
 
 if __name__ == "__main__":
-    host = os.getenv("BACKEND_HOST", "0.0.0.0")
     port = int(os.getenv("BACKEND_PORT", 8000))
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)

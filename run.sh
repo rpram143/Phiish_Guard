@@ -47,11 +47,15 @@ mkdir -p logs
 echo -e "\n${BLUE}[2/5] Starting Backend API...${NC}"
 ./backend/setup_backend.sh
 cd backend
-# Explicitly allow external connections for the demo
 export VM_HOST_IP=$LOCAL_IP
 nohup ./venv/bin/python3 -m app.main > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
-echo -e "${GREEN}✓ Backend started on http://$LOCAL_IP:8000${NC}"
+sleep 5
+if ps -p $BACKEND_PID > /dev/null; then
+    echo -e "${GREEN}✓ Backend started on http://$LOCAL_IP:8000 (PID: $BACKEND_PID)${NC}"
+else
+    echo -e "${RED}✗ Backend failed to start. Check logs/backend.log${NC}"
+fi
 cd ..
 
 # 3. Start Dashboard
@@ -61,10 +65,14 @@ if [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}Installing dashboard dependencies...${NC}"
     npm install > ../logs/dashboard-install.log 2>&1
 fi
-# Expose dashboard to network
 nohup npm run dev -- --port 5173 --host > ../logs/dashboard.log 2>&1 &
 DASHBOARD_PID=$!
-echo -e "${GREEN}✓ Dashboard started on http://$LOCAL_IP:5173${NC}"
+sleep 5
+if ps -p $DASHBOARD_PID > /dev/null; then
+    echo -e "${GREEN}✓ Dashboard started on http://$LOCAL_IP:5173 (PID: $DASHBOARD_PID)${NC}"
+else
+    echo -e "${RED}✗ Dashboard failed to start. Check logs/dashboard.log${NC}"
+fi
 cd ..
 
 # 4. Start Phishing Pages
