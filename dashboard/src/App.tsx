@@ -56,7 +56,16 @@ function getWsUrl(apiBase: string) {
 
 function getApiBaseFromStorage() {
     const saved = localStorage.getItem(LS_API_BASE_KEY);
-    return saved?.trim() || DEFAULT_API_BASE;
+    if (saved?.trim()) return saved.trim();
+
+    // If we are accessing via an IP address (not localhost), 
+    // assume the backend is on the same IP at port 8000
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('::1')) {
+        return `http://${hostname}:8000`;
+    }
+
+    return DEFAULT_API_BASE;
 }
 
 const StatCard: React.FC<{
