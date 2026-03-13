@@ -10,12 +10,28 @@ import re
 
 class BehavioralAnalyzer:
     def __init__(self):
-        self.trusted_roots = ["google.com", "paypal.com", "microsoft.com", "office.com", "live.com", "microsoftonline.com"]
+        self.trusted_roots = ["google.com", "paypal.com", "microsoft.com", "office.com", "live.com", "microsoftonline.com", "github.com", "apple.com"]
+        self.trusted_tlds = [".edu", ".gov", ".ac.in", ".edu.in", ".gov.in", ".org"]
 
     def _is_trusted(self, domain):
+        # Check explicit root domains
         for root in self.trusted_roots:
             if domain == root or domain.endswith("." + root):
                 return True
+        
+        # Check trusted TLDs (Educational/Government usually safe)
+        for tld in self.trusted_tlds:
+            if domain.endswith(tld):
+                return True
+                
+        # Check if it's a private/local IP
+        private_patterns = [
+            r'^127\.', r'^10\.', r'^192\.168\.', r'^172\.(1[6-9]|2[0-9]|3[0-1])\.',
+            r'^localhost$', r'^::1$'
+        ]
+        if any(re.match(pattern, domain) for pattern in private_patterns):
+            return True
+            
         return False
 
     async def check_ssl(self, domain):
@@ -84,9 +100,10 @@ class BehavioralAnalyzer:
                 details.append("No valid SSL certificate found")
 
         # 3. Domain Age (WHOIS)
-        if "." in domain and not domain.startswith("192.168") and domain != "localhost":
+        # Skip WHOIS for trusted domains/TLDs/IPs
+        if "." in domain and not self._is_trusted(domain):
             try:
-                # Basic WHOIS check - can be slow, so we wrap it
+                # Basic WHOIS check
                 w = whois.whois(domain)
                 creation_date = getattr(w, 'creation_date', None)
                 
@@ -95,19 +112,20 @@ class BehavioralAnalyzer:
                 
                 if creation_date and isinstance(creation_date, datetime):
                     age = (datetime.now() - creation_date).days
-                    if age < 7:
-                        score = max(score, 95.0)
-                        details.append(f"ZERO-HOUR THREAT: Domain registered {age} days ago (Ultra-High Risk)")
-                    elif age < 30:
-                        score = max(score, 80.0)
-                        details.append(f"Domain is extremely new ({age} days)")
+                    if age < 14:
+                        # Only ultra-high if it's not a common TLD and is super new
+                        score = max(score, 85.0)
+                        details.append(f"CRITICAL: Domain registered only {age} days ago.")
                     elif age < 90:
-                        score = max(score, 30.0)
+                        score = max(score, 40.0)
                         details.append(f"Domain is relatively new ({age} days)")
-            except Exception as e:
-                # If WHOIS fails, it's often because the domain is too new to be indexed
-                score = max(score, 60.0)
-                details.append("WHOIS DATA MISSING: Potential Zero-Day obfuscation detected")
+            except Exception:
+                # Soften the penalty for missing WHOIS data
+                if score > 30: # If other layers already flagged it
+                    score = max(score, 50.0)
+                    details.append("WHOIS lookup unavailable for suspicious domain")
+                else:
+                    details.append("WHOIS data unavailable (skipping)")
 
         return LayerResult(
             score=min(score, 100.0),

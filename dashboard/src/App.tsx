@@ -67,22 +67,26 @@ function safeUrl(value: string) {
 }
 
 function getWsUrl(apiBase: string) {
-    const u = safeUrl(apiBase);
-    if (!u) return null;
-    const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${proto}//${u.host}/ws/scans`;
+    try {
+        const u = new URL(apiBase);
+        const proto = u.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${proto}//${u.host}/ws/scans`;
+    } catch {
+        // Fallback for relative or malformed URLs
+        const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname;
+        return `${proto}//${host}:8000/ws/scans`;
+    }
 }
 
 function getApiBaseFromStorage() {
     const saved = localStorage.getItem(LS_API_BASE_KEY);
     if (saved?.trim()) return saved.trim();
 
+    // Default discovery: use the current window host at port 8000
+    const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('::1')) {
-        return `http://${hostname}:8000`;
-    }
-
-    return DEFAULT_API_BASE;
+    return `${protocol}//${hostname}:8000`;
 }
 
 const StatCard: React.FC<{

@@ -23,17 +23,18 @@ class LinguisticAnalyzer:
         return False
 
     async def analyze(self, url: str, html: str, text: str) -> LayerResult:
+        parsed_url = urlparse(url)
+        domain = parsed_url.netloc.lower().split(':')[0]
+        
+        # 1. Whitelist Check
+        if self._is_trusted(domain) or domain.endswith(".edu.in") or domain.endswith(".ac.in") or domain.endswith(".edu"):
+            return LayerResult(score=0.0, details="Verified educational/official domain.", ai_confidence=0.0)
+
         if not self.client:
             return LayerResult(score=10.0, details="Groq API key missing - Check .env file", ai_confidence=0.0)
         
-        parsed_url = urlparse(url)
-        domain = parsed_url.netloc.lower().split(':')[0]
         text_lower = text.lower()
         
-        # 1. Whitelist Check
-        if self._is_trusted(domain):
-            return LayerResult(score=0.0, details="Verified official brand domain.", ai_confidence=0.0)
-
         # 2. Demo Brand Detection (Impersonation check)
         brands = ["paypal", "google", "microsoft"]
         for brand in brands:
@@ -59,6 +60,8 @@ class LinguisticAnalyzer:
             3. Suspicious requests (credentials, SSN, etc).
             4. AI-generated text patterns.
             5. Obfuscation (e.g. using special characters to hide brand names like P@yPal).
+
+            NOTE: Generic "Student Login", "Faculty Portal", or "Employee Registration" text on .edu or company internal sites are NOT suspicious. Only flag if it mimics a MAJOR public brand (like PayPal, Google, Microsoft) on a mismatched domain.
 
             Return JSON:
             {{
