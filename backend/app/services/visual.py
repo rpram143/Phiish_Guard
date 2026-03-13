@@ -32,9 +32,21 @@ class VisualAnalyzer:
         # Mapping localhost to the accessible host IP for VM analysis
         vm_host = os.getenv("VM_HOST_IP", "127.0.0.1")
         internal_url = url.replace("localhost", vm_host).replace("127.0.0.1", vm_host)
+        
+        # Arch Linux Support: Check for system chromium
+        executable_path = None
+        if os.path.exists("/usr/bin/chromium"):
+            executable_path = "/usr/bin/chromium"
+        elif os.path.exists("/usr/bin/google-chrome"):
+            executable_path = "/usr/bin/google-chrome"
+
         try:
             async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
+                launch_kwargs = {"headless": True}
+                if executable_path:
+                    launch_kwargs["executable_path"] = executable_path
+                    
+                browser = await p.chromium.launch(**launch_kwargs)
                 page = await browser.new_page()
                 # Set a timeout for the page load
                 await page.goto(internal_url, timeout=10000, wait_until="networkidle")
