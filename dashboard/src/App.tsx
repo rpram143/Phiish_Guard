@@ -31,8 +31,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Types
 interface Layers {
     linguistic: number;
+    linguistic_details?: string;
     visual: number;
+    visual_details?: string;
     behavioral: number;
+    behavioral_details?: string;
 }
 
 interface Scan {
@@ -406,9 +409,30 @@ const App: React.FC = () => {
                                             </div>
                                             
                                             <div className="p-4 bg-blue-600/5 border border-blue-500/20 rounded-2xl">
-                                                <p className="text-[11px] leading-relaxed text-slate-300">
-                                                    <span className="font-bold text-blue-400">AI INSIGHT:</span> Our neural engine detected structural impersonation patterns consistent with {selectedScan.risk === 'PHISHING' ? 'active credentials harvesting.' : 'legitimate domain architecture.'}
-                                                </p>
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <Zap size={14} className="text-blue-500" />
+                                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Forensic Briefing</span>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    {[
+                                                        { score: selectedScan.layers.linguistic, details: selectedScan.layers.linguistic_details },
+                                                        { score: selectedScan.layers.visual, details: selectedScan.layers.visual_details },
+                                                        { score: selectedScan.layers.behavioral, details: selectedScan.layers.behavioral_details }
+                                                    ].map((layer, lIdx) => (
+                                                        (layer.score > 0 || (layer.details && layer.details.length > 0)) && (
+                                                            (layer.details || "").split('|').map((finding, fIdx) => (
+                                                                finding.trim().length > 0 && (
+                                                                    <div key={`${lIdx}-${fIdx}`} className="flex items-start gap-2">
+                                                                        <div className={`w-1 h-1 rounded-full mt-1.5 shrink-0 ${layer.score > 70 ? 'bg-red-500' : layer.score > 30 ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+                                                                        <p className="text-[11px] leading-relaxed text-slate-300 italic">
+                                                                            {finding.trim()}
+                                                                        </p>
+                                                                    </div>
+                                                                )
+                                                            ))
+                                                        )
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

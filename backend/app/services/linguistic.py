@@ -49,15 +49,22 @@ class LinguisticAnalyzer:
 
         try:
             prompt = f"""
-            SYSTEM: Phishing Analysis AI. 
+            SYSTEM: Phishing Forensic Analyst.
             URL: {url}
             Text: "{text[:1500]}"
             
+            Analyze for:
+            1. Urgency/Fear manipulation.
+            2. Authority impersonation.
+            3. Suspicious requests (credentials, SSN, etc).
+            4. AI-generated text patterns.
+
             Return JSON:
             {{
-                "risk_score": float,
-                "ai_confidence": float,
-                "summary": "Short explanation"
+                "risk_score": float (0-100),
+                "ai_confidence": float (0-100),
+                "summary": "Short explanation",
+                "forensic_findings": ["Pattern 1 found", "Pattern 2 found"]
             }}
             """
             
@@ -70,9 +77,14 @@ class LinguisticAnalyzer:
             import json
             result_json = json.loads(completion.choices[0].message.content)
             
+            # Extract findings or default to empty list
+            findings = result_json.get("forensic_findings", [])
+            if not findings and result_json.get("summary"):
+                findings = [result_json.get("summary")]
+
             return LayerResult(
                 score=float(result_json.get("risk_score", 0)),
-                details=result_json.get("summary", "Analysis complete"),
+                details=" | ".join(findings), # We store as a pipe-separated string for simplicity
                 ai_confidence=float(result_json.get("ai_confidence", 0))
             )
             

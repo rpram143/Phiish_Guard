@@ -43,8 +43,11 @@ async def get_scans(limit: int = 10, db: Session = Depends(get_db)):
             "time": (log.timestamp or datetime.datetime.now()).strftime("%H:%M:%S"),
             "layers": {
                 "linguistic": log.linguistic_score or 0.0,
+                "linguistic_details": log.details.get("linguistic", {}).get("details", "") if log.details else "",
                 "visual": log.visual_score or 0.0,
-                "behavioral": log.behavioral_score or 0.0
+                "visual_details": log.details.get("visual", {}).get("details", "") if log.details else "",
+                "behavioral": log.behavioral_score or 0.0,
+                "behavioral_details": log.details.get("behavioral", {}).get("details", "") if log.details else ""
             }
         }
         for log in logs
@@ -103,8 +106,11 @@ async def scan_url(request: ScanRequest, req: Request, db: Session = Depends(get
             "time": datetime.datetime.now().strftime("%H:%M:%S"),
             "layers": {
                 "linguistic": linguistic_result.score,
+                "linguistic_details": linguistic_result.details,
                 "visual": visual_result.score,
-                "behavioral": behavioral_result.score
+                "visual_details": visual_result.details,
+                "behavioral": behavioral_result.score,
+                "behavioral_details": behavioral_result.details
             }
         }
         await manager.broadcast(json.dumps(ws_message))
