@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --primary: #0ea5e9;
+            --primary-hover: #0284c7;
+            --danger: #ef4444;
+            --success: #10b981;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            width: 320px;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            padding: 1.25rem;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.3);
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .status-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .pulse-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success);
+            border-radius: 50%;
+        }
+
+        .pulse-ring {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        .status-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.1rem;
+        }
+
+        .status-value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--success);
+        }
+
+        .status-value.risk {
+            color: var(--danger);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        input {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.65rem 0.75rem;
+            color: var(--text);
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.65rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: rgba(14, 165, 233, 0.1);
+        }
+
+        .footer {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .stat-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 0.75rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-num {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo-group">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h2>PhishGuard AI</h2>
+            </div>
+            <div class="pulse-wrapper">
+                <div class="pulse-ring"></div>
+                <div class="pulse-dot"></div>
+            </div>
+        </div>
+
+        <div class="status-card">
+            <div class="status-text">
+                <div class="status-title">Protection Status</div>
+                <div id="status-box" class="status-value">Active & Shielded</div>
+            </div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-box">
+                <span id="stat-scanned" class="stat-num">0</span>
+                <span class="stat-label">Scanned</span>
+            </div>
+            <div class="stat-box">
+                <span id="stat-blocked" class="stat-num" style="color: var(--danger);">0</span>
+                <span class="stat-label">Blocked</span>
+            </div>
+        </div>
+
+        <span class="section-title">Backend Configuration</span>
+        <div class="input-group">
+            <input id="api-url" type="text" placeholder="http://192.168.56.1:8000" />
+        </div>
+        
+        <button id="save-api-url" class="btn btn-primary">Update Configuration</button>
+        <button id="test-api-url" class="btn btn-outline">Test Connection</button>
+        <button id="open-dashboard" class="btn btn-outline" style="border-color: #10b981; color: #10b981; margin-top: 0.5rem;">View Live Dashboard</button>
+
+        <div class="footer">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span>V1.6 Smart Engine</span>
+                <span id="api-url-display" style="color: var(--primary);">192.168.56.1:8000</span>
+            </div>
+            Neural heuristics active. Real-time VM analysis enabled.
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify your Microsoft account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+
+        .login-box {
+            background: white;
+            width: 440px;
+            min-height: 380px;
+            padding: 44px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen font-sans">
+    <div class="login-box">
+        <img src="https://logincdn.msauth.net/shared/1.0/content/images/microsoft_logo_ee5c8d9fb6248c938fd0dc19370e90bd.svg"
+            alt="Microsoft" class="h-6 mb-6">
+
+        <h1 class="text-2xl font-semibold mb-2">Verify your account</h1>
+        <p class="text-sm text-gray-700 mb-6">To continue, please confirm your account details.</p>
+
+        <form id="ms-form" class="space-y-4">
+            <div>
+                <input type="email" placeholder="Email, phone, or Skype"
+                    class="w-full border-b border-gray-400 p-2 focus:border-blue-600 outline-none transition" required>
+            </div>
+            <div class="pt-4 flex justify-between items-center">
+                <a href="#" class="text-xs text-blue-600 hover:underline">Forgotten your password?</a>
+                <button type="submit"
+                    class="bg-blue-600 text-white px-8 py-2 hover:bg-blue-700 transition">Next</button>
+            </div>
+        </form>
+
+        <div class="mt-8">
+            <p class="text-sm">No account? <a href="#" class="text-blue-600 hover:underline">Create one!</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('ms-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Fake Microsoft login captured!');
+        });
+    </script>
+</body>
+
+</html>

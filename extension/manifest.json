@@ -1,0 +1,40 @@
+{
+    "manifest_version": 3,
+    "name": "PhishGuard AI",
+    "version": "1.6",
+    "description": "Real-time AI-powered phishing detection for VM-based security analysis.",
+    "permissions": [
+        "activeTab",
+        "tabs",
+        "scripting",
+        "declarativeNetRequest",
+        "storage",
+        "notifications"
+    ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/icon16.png",
+            "48": "icons/icon48.png",
+            "128": "icons/icon128.png"
+        }
+    },
+    "background": {
+        "service_worker": "background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content.js"
+            ],
+            "run_at": "document_end"
+        }
+    ]
+}

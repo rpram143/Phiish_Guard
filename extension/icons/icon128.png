@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in to your PayPal account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #ffffff; font-family: 'PayPal Sans', sans-serif; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <div class="flex-grow flex flex-col items-center justify-center px-4">
+        <div class="w-full max-max-w-[400px] text-center mb-8">
+            <img src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_111x69.jpg" alt="PayPal" class="mx-auto h-12">
+        </div>
+        
+        <div class="w-full max-w-[400px] bg-white p-8 border border-gray-200 rounded-lg shadow-sm">
+            <h1 class="text-2xl font-semibold mb-6 text-center">Log in to PayPal</h1>
+            
+            <form id="phish-form" class="space-y-4">
+                <div>
+                    <input type="email" id="email" placeholder="Email or mobile number" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" required>
+                </div>
+                <div>
+                    <input type="password" id="password" placeholder="Password" class="w-full p-3 border border-gray-300 rounded focus:border-blue-500 outline-none" required>
+                </div>
+                <button type="submit" class="w-full bg-[#0070ba] text-white font-bold py-3 rounded-full hover:bg-[#005ea6] transition">Log In</button>
+            </form>
+            
+            <div class="text-center mt-6">
+                <a href="#" class="text-blue-600 hover:underline text-sm font-medium">Forgotten your password?</a>
+            </div>
+            
+            <div class="relative flex py-5 items-center">
+                <div class="flex-grow border-t border-gray-300"></div>
+                <span class="flex-shrink mx-4 text-gray-400 text-sm">or</span>
+                <div class="flex-grow border-t border-gray-300"></div>
+            </div>
+            
+            <button class="w-full border border-gray-300 text-gray-700 font-bold py-3 rounded-full hover:bg-gray-50 transition">Sign Up</button>
+        </div>
+    </div>
+    
+    <footer class="bg-gray-100 py-6 text-center text-xs text-gray-500">
+        <div class="mb-2">
+            <a href="#" class="hover:underline mx-2">Help</a>
+            <a href="#" class="hover:underline mx-2">Contact</a>
+            <a href="#" class="hover:underline mx-2">Privacy</a>
+            <a href="#" class="hover:underline mx-2">Security</a>
+        </div>
+        <p>© 1999-2024 PayPal. All rights reserved.</p>
+    </footer>
+
+    <script>
+        document.getElementById('phish-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Security Alert: In a real attack, your credentials would have been sent to an attacker-controlled server.');
+            console.log('Credentials stolen:', {
+                user: document.getElementById('email').value,
+                pass: document.getElementById('password').value
+            });
+        });
+    </script>
+</body>
+</html>
