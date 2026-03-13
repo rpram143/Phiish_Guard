@@ -41,28 +41,60 @@ function getHealthUrl(scanUrl) {
 }
 
 function setStatus(text, kind) {
-    const el = document.getElementById("status-box");
-    const pulseRing = document.querySelector(".pulse-ring");
-    const pulseDot = document.querySelector(".pulse-dot");
+    const label = document.getElementById("status-label");
+    const badge = document.getElementById("status-badge");
+    const dot = badge?.querySelector(".status-dot");
+    const protectionText = document.getElementById("protection-status");
     
-    if (!el) return;
-    el.textContent = text;
-    el.classList.remove("risk");
+    if (!label || !badge) return;
+    
+    label.textContent = text;
     
     if (kind === "risk") {
-        el.classList.add("risk");
-        if (pulseRing) pulseRing.style.borderColor = "var(--danger)";
-        if (pulseDot) pulseDot.style.background = "var(--danger)";
+        badge.style.background = "rgba(239, 68, 68, 0.1)";
+        badge.style.borderColor = "rgba(239, 68, 68, 0.2)";
+        label.style.color = "var(--danger)";
+        if (dot) {
+            dot.style.background = "var(--danger)";
+            dot.style.boxShadow = "0 0 8px var(--danger)";
+        }
+        if (protectionText) protectionText.style.color = "var(--danger)";
+    } else if (kind === "warning") {
+        badge.style.background = "rgba(245, 158, 11, 0.1)";
+        badge.style.borderColor = "rgba(245, 158, 11, 0.2)";
+        label.style.color = "var(--warning)";
+        if (dot) {
+            dot.style.background = "var(--warning)";
+            dot.style.boxShadow = "0 0 8px var(--warning)";
+        }
     } else {
-        if (pulseRing) pulseRing.style.borderColor = "var(--success)";
-        if (pulseDot) pulseDot.style.background = "var(--success)";
+        badge.style.background = "rgba(16, 185, 129, 0.1)";
+        badge.style.borderColor = "rgba(16, 185, 129, 0.2)";
+        label.style.color = "var(--success)";
+        if (dot) {
+            dot.style.background = "var(--success)";
+            dot.style.boxShadow = "0 0 8px var(--success)";
+        }
+        if (protectionText) protectionText.style.color = "var(--text)";
     }
 }
 
 function updateStats() {
-    chrome.storage.local.get(["scannedCount", "blockedCount"], (res) => {
-        document.getElementById("stat-scanned").textContent = res.scannedCount || 0;
-        document.getElementById("stat-blocked").textContent = res.blockedCount || 0;
+    chrome.storage.local.get(["scannedCount", "blockedCount", "lastScanUrl"], (res) => {
+        const scannedEl = document.getElementById("stat-scanned");
+        const blockedEl = document.getElementById("stat-blocked");
+        const urlEl = document.getElementById("last-scan-url");
+
+        if (scannedEl) scannedEl.textContent = res.scannedCount || 0;
+        if (blockedEl) blockedEl.textContent = res.blockedCount || 0;
+        if (urlEl && res.lastScanUrl) {
+            try {
+                const domain = new URL(res.lastScanUrl).hostname;
+                urlEl.textContent = `Last: ${domain}`;
+            } catch {
+                urlEl.textContent = res.lastScanUrl;
+            }
+        }
     });
 }
 
@@ -80,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     updateStats();
-    // Refresh stats every second while popup is open
     setInterval(updateStats, 1000);
 
     dashboardButton?.addEventListener("click", () => {
@@ -92,8 +123,8 @@ document.addEventListener("DOMContentLoaded", () => {
         chrome.storage.sync.set({ apiUrl: next }, () => {
             if (display) display.textContent = getDisplayHost(next);
             if (input) input.value = next;
-            setStatus("Settings Updated", "safe");
-            setTimeout(() => setStatus("Active & Shielded", "safe"), 2000);
+            setStatus("UPDATED", "safe");
+            setTimeout(() => setStatus("SECURED", "safe"), 2000);
         });
     });
 
@@ -101,11 +132,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const next = normalizeApiUrl(input?.value);
         const healthUrl = getHealthUrl(next);
         if (!healthUrl) {
-            setStatus("Invalid URL format", "risk");
+            setStatus("INVALID", "risk");
             return;
         }
 
-        setStatus("Connecting...", "safe");
+        setStatus("TESTING", "warning");
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -113,13 +144,13 @@ document.addEventListener("DOMContentLoaded", () => {
             clearTimeout(timeoutId);
 
             if (res.ok) {
-                setStatus("System Online ✅", "safe");
-                setTimeout(() => setStatus("Active & Shielded", "safe"), 3000);
+                setStatus("ONLINE", "safe");
+                setTimeout(() => setStatus("SECURED", "safe"), 3000);
             } else {
-                setStatus(`Offline (${res.status})`, "risk");
+                setStatus("OFFLINE", "risk");
             }
         } catch (e) {
-            setStatus("Backend Unreachable", "risk");
+            setStatus("ERROR", "risk");
         }
     });
 });
