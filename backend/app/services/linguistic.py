@@ -58,13 +58,14 @@ class LinguisticAnalyzer:
             2. Authority impersonation.
             3. Suspicious requests (credentials, SSN, etc).
             4. AI-generated text patterns.
+            5. Obfuscation (e.g. using special characters to hide brand names like P@yPal).
 
             Return JSON:
             {{
                 "risk_score": float (0-100),
                 "ai_confidence": float (0-100),
                 "summary": "Short explanation",
-                "forensic_findings": ["Pattern 1 found", "Pattern 2 found"]
+                "forensic_findings": ["Pattern 1 found", "Obfuscated brand detected"]
             }}
             """
             

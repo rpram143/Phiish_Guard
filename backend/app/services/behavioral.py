@@ -95,16 +95,19 @@ class BehavioralAnalyzer:
                 
                 if creation_date and isinstance(creation_date, datetime):
                     age = (datetime.now() - creation_date).days
-                    if age < 30:
+                    if age < 7:
+                        score = max(score, 95.0)
+                        details.append(f"ZERO-HOUR THREAT: Domain registered {age} days ago (Ultra-High Risk)")
+                    elif age < 30:
                         score = max(score, 80.0)
                         details.append(f"Domain is extremely new ({age} days)")
                     elif age < 90:
                         score = max(score, 30.0)
                         details.append(f"Domain is relatively new ({age} days)")
             except Exception as e:
-                # Silently skip if WHOIS fails or times out
-                print(f"WHOIS Lookup failed for {domain}: {e}")
-                pass
+                # If WHOIS fails, it's often because the domain is too new to be indexed
+                score = max(score, 60.0)
+                details.append("WHOIS DATA MISSING: Potential Zero-Day obfuscation detected")
 
         return LayerResult(
             score=min(score, 100.0),
