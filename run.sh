@@ -69,14 +69,18 @@ cd ..
 
 # 4. Start Phishing Pages
 echo -e "\n${BLUE}[4/4] Starting Phishing Pages...${NC}"
-cd demo_pages/paypal && nohup python3 -m http.server 3001 > ../../logs/paypal.log 2>&1 &
+
+# Using (cd ...) & subshells to keep main shell in root directory
+(cd demo_pages/paypal && nohup python3 -m http.server 3001 > ../../logs/paypal.log 2>&1) &
 PAYPAL_PID=$!
-cd ../google && nohup python3 -m http.server 3002 > ../../logs/google.log 2>&1 &
+
+(cd demo_pages/google && nohup python3 -m http.server 3002 > ../../logs/google.log 2>&1) &
 GOOGLE_PID=$!
-cd ../microsoft && nohup python3 -m http.server 3003 > ../../logs/microsoft.log 2>&1 &
+
+(cd demo_pages/microsoft && nohup python3 -m http.server 3003 > ../../logs/microsoft.log 2>&1) &
 MICROSOFT_PID=$!
+
 echo -e "${GREEN}✓ Phishing pages started (Ports: 3001-3003)${NC}"
-cd ../..
 
 # Final Summary
 echo -e "\n${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
