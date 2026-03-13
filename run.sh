@@ -67,16 +67,8 @@ DASHBOARD_PID=$!
 echo -e "${GREEN}✓ Dashboard started on http://$LOCAL_IP:5173${NC}"
 cd ..
 
-# 4. Start Email Inbox Simulator
-echo -e "\n${BLUE}[4/5] Starting Email Inbox Simulator...${NC}"
-cd demo_pages/phishing_emails
-nohup python3 -m http.server 3000 > ../../logs/inbox.log 2>&1 &
-INBOX_PID=$!
-echo -e "${GREEN}✓ Email Inbox started on http://$LOCAL_IP:3000/inbox.html${NC}"
-cd ../..
-
-# 5. Start Phishing Pages
-echo -e "\n${BLUE}[5/5] Starting Phishing Pages...${NC}"
+# 4. Start Phishing Pages
+echo -e "\n${BLUE}[4/4] Starting Phishing Pages...${NC}"
 cd demo_pages/paypal && nohup python3 -m http.server 3001 > ../../logs/paypal.log 2>&1 &
 PAYPAL_PID=$!
 cd ../google && nohup python3 -m http.server 3002 > ../../logs/google.log 2>&1 &
@@ -93,7 +85,7 @@ echo -e "${GREEN}╚════════════════════
 
 echo -e "\n${BLUE}Settings for your Friend's Laptop (Victim):${NC}"
 echo -e "  1. Extension API Base URL:  ${YELLOW}http://$LOCAL_IP:8000${NC}"
-echo -e "  2. Open Email Inbox:       ${YELLOW}http://$LOCAL_IP:3000/inbox.html${NC}"
+echo -e "  2. Phishing Targets:       (See below)${NC}"
 
 echo -e "\n${BLUE}URLs for your Laptop (Admin):${NC}"
 echo -e "  📊 Dashboard:               ${YELLOW}http://localhost:5173${NC}"
@@ -107,7 +99,7 @@ echo -e "  Microsoft:                 http://$LOCAL_IP:3003"
 # Cleanup function
 cleanup() {
     echo -e "\n\n${YELLOW}Shutting down all components...${NC}"
-    kill $BACKEND_PID $DASHBOARD_PID $INBOX_PID $PAYPAL_PID $GOOGLE_PID $MICROSOFT_PID 2>/dev/null || true
+    kill $BACKEND_PID $DASHBOARD_PID $PAYPAL_PID $GOOGLE_PID $MICROSOFT_PID 2>/dev/null || true
     echo -e "${GREEN}Goodbye!${NC}"
     exit 0
 }
