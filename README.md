@@ -155,6 +155,14 @@ The demo shows:
 GROQ_API_KEY=your_api_key_here
 BACKEND_HOST=0.0.0.0
 BACKEND_PORT=8000
+
+# Optional (VM/remote browser setups)
+# Replace localhost/127.0.0.1 in analysis URLs with this reachable IP.
+VM_HOST_IP=127.0.0.1
+
+# Optional (environments where Playwright/Chromium can't launch)
+# If set to 1, the backend won't attempt Playwright-based screenshots and will rely on extension-provided screenshots.
+PHISHGUARD_DISABLE_PLAYWRIGHT=0
 ```
 
 ### Extension

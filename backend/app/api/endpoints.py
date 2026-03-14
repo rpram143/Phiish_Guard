@@ -9,6 +9,7 @@ from app.services.behavioral import BehavioralAnalyzer
 import time
 import json
 import datetime
+import asyncio
 
 router = APIRouter()
 
@@ -18,7 +19,7 @@ behavioral_analyzer = BehavioralAnalyzer()
 
 @router.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "healthy"}
 
 @router.get("/stats")
 async def get_stats(db: Session = Depends(get_db)):
@@ -56,10 +57,21 @@ async def get_scans(limit: int = 10, db: Session = Depends(get_db)):
 @router.post("/scan", response_model=ScanResponse)
 async def scan_url(request: ScanRequest, req: Request, db: Session = Depends(get_db)):
     try:
-        # Run all analysis layers
-        linguistic_result = await linguistic_analyzer.analyze(request.url, request.html_content, request.text_content)
-        visual_result = await visual_analyzer.analyze(request.url, request.screenshot)
-        behavioral_result = await behavioral_analyzer.analyze(request.url)
+        # Run all analysis layers concurrently to reduce end-to-end latency.
+        results = await asyncio.gather(
+            linguistic_analyzer.analyze(request.url, request.html_content, request.text_content),
+            visual_analyzer.analyze(request.url, request.screenshot),
+            behavioral_analyzer.analyze(request.url),
+            return_exceptions=True,
+        )
+
+        linguistic_result, visual_result, behavioral_result = results
+        if isinstance(linguistic_result, Exception):
+            linguistic_result = LayerResult(score=0.0, details=f"Linguistic error: {linguistic_result}", ai_confidence=0.0)
+        if isinstance(visual_result, Exception):
+            visual_result = LayerResult(score=0.0, details=f"Visual error: {visual_result}", ai_confidence=0.0)
+        if isinstance(behavioral_result, Exception):
+            behavioral_result = LayerResult(score=0.0, details=f"Behavioral error: {behavioral_result}", ai_confidence=0.0)
 
         # AGGRESSIVE RISK CALCULATION FOR DEMO
         scores = [linguistic_result.score, visual_result.score, behavioral_result.score]
@@ -103,6 +115,7 @@ async def scan_url(request: ScanRequest, req: Request, db: Session = Depends(get
             "url": request.url,
             "score": round(combined_score, 1),
             "risk": risk_level,
+            "sender_info": request.sender_info,
             "time": datetime.datetime.now().strftime("%H:%M:%S"),
             "layers": {
                 "linguistic": linguistic_result.score,

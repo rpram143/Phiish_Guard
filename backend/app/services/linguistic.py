@@ -3,6 +3,7 @@ from groq import Groq
 from app.models.schemas import LayerResult
 from urllib.parse import urlparse
 from dotenv import load_dotenv
+import asyncio
 
 class LinguisticAnalyzer:
     def __init__(self):
@@ -14,9 +15,29 @@ class LinguisticAnalyzer:
             self.client = None
         
         # White-listed base domains
-        self.trusted_roots = ["google.com", "paypal.com", "microsoft.com", "office.com", "live.com", "microsoftonline.com"]
+        self.trusted_roots = [
+            "google.com", "github.com", "apple.com", "microsoft.com", 
+            "office.com", "live.com", "outlook.com", "microsoftonline.com",
+            "paypal.com", "whatsapp.com", "whatsapp.net", "facebook.com", "instagram.com", 
+            "linkedin.com", "twitter.com", "x.com", "amazon.com", 
+            "netflix.com", "discord.com", "slack.com", "googlevideo.com", "youtube.com", "ytimg.com",
+            "brave.com", "bing.com", "duckduckgo.com", "google.co.in", "yahoo.com"
+        ]
 
-    def _is_trusted(self, domain):
+    def _is_trusted(self, domain, port=None):
+        domain = domain.lower().rstrip('.')
+        
+        # Whitelist localhost and private IPs unless on specific demo phishing ports
+        demo_ports = ["3001", "3002", "3003"]
+        is_local = domain in ["localhost", "127.0.0.1", "::1"] or \
+                   domain.startswith("192.168.") or domain.startswith("10.") or \
+                   domain.startswith("172.")
+                   
+        if is_local:
+            if port and str(port) in demo_ports:
+                return False # Local but on a phishing demo port
+            return True # Safe local development (like dashboard)
+
         for root in self.trusted_roots:
             if domain == root or domain.endswith("." + root):
                 return True
@@ -25,10 +46,11 @@ class LinguisticAnalyzer:
     async def analyze(self, url: str, html: str, text: str) -> LayerResult:
         parsed_url = urlparse(url)
         domain = parsed_url.netloc.lower().split(':')[0]
+        port = str(parsed_url.port) if parsed_url.port else ""
         
         # 1. Whitelist Check
-        if self._is_trusted(domain) or domain.endswith(".edu.in") or domain.endswith(".ac.in") or domain.endswith(".edu"):
-            return LayerResult(score=0.0, details="Verified educational/official domain.", ai_confidence=0.0)
+        if self._is_trusted(domain, port) or domain.endswith(".edu.in") or domain.endswith(".ac.in") or domain.endswith(".edu"):
+            return LayerResult(score=0.0, details="Verified official/local domain.", ai_confidence=0.0)
 
         if not self.client:
             return LayerResult(score=10.0, details="Groq API key missing - Check .env file", ai_confidence=0.0)
@@ -36,12 +58,12 @@ class LinguisticAnalyzer:
         text_lower = text.lower()
         
         # 2. Demo Brand Detection (Impersonation check)
-        brands = ["paypal", "google", "microsoft"]
+        brands = ["paypal", "google", "microsoft", "whatsapp"]
         for brand in brands:
             if brand in text_lower:
                 # If brand mentioned but domain is NOT official and is a suspicious host
-                is_suspicious_host = any(char.isdigit() for char in domain) or "192.168" in domain or "localhost" in domain
-                if is_suspicious_host:
+                # We already did part of this in _is_trusted, but explicitly check for demo ports here if brand appears
+                if port in ["3001", "3002", "3003"]:
                     return LayerResult(
                         score=98.0, 
                         details=f"CRITICAL: Brand '{brand.upper()}' mentioned on an unofficial host '{domain}'.", 
@@ -71,12 +93,15 @@ class LinguisticAnalyzer:
                 "forensic_findings": ["Pattern 1 found", "Obfuscated brand detected"]
             }}
             """
-            
-            completion = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"}
-            )
+
+            def do_request():
+                return self.client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}],
+                    response_format={"type": "json_object"},
+                )
+
+            completion = await asyncio.wait_for(asyncio.to_thread(do_request), timeout=7)
             
             import json
             result_json = json.loads(completion.choices[0].message.content)

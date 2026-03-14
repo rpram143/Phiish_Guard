@@ -1,20 +1,21 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { 
-  Shield, 
-  AlertTriangle, 
-  CheckCircle, 
-  Activity, 
-  Search, 
-  Globe, 
-  ChevronRight,
-  LayoutDashboard,
-  Settings as SettingsIcon,
-  ShieldCheck,
-  History,
-  Zap,
-  Lock,
-  ExternalLink,
-  Cpu
+import {
+    Shield,
+    AlertTriangle,
+    CheckCircle,
+    Activity,
+    Search,
+    Globe,
+    ChevronRight,
+    LayoutDashboard,
+    Settings as SettingsIcon,
+    ShieldCheck,
+    History,
+    Zap,
+    Lock,
+    ExternalLink,
+    Cpu,
+    Target
 } from 'lucide-react';
 import {
     XAxis,
@@ -24,7 +25,11 @@ import {
     ResponsiveContainer,
     AreaChart,
     Area,
-    Cell
+    RadarChart,
+    PolarGrid,
+    PolarAngleAxis,
+    PolarRadiusAxis,
+    Radar
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -43,6 +48,7 @@ interface Scan {
     url: string;
     score: number;
     risk: 'PHISHING' | 'SUSPICIOUS' | 'SAFE';
+    sender_info?: string;
     time: string;
     layers: Layers;
 }
@@ -97,29 +103,34 @@ const StatCard: React.FC<{
     color: 'blue' | 'red' | 'yellow' | 'emerald'
 }> = ({ title, value, icon, trend, color }) => {
     const colorMap = {
-        blue: 'from-blue-500/10 to-transparent border-blue-500/20 text-blue-400',
-        red: 'from-red-500/10 to-transparent border-red-500/20 text-red-400',
-        yellow: 'from-yellow-500/10 to-transparent border-yellow-500/20 text-yellow-400',
-        emerald: 'from-emerald-500/10 to-transparent border-emerald-500/20 text-emerald-400'
+        blue: 'from-blue-500/10 to-transparent border-blue-500/20 text-blue-400 group-hover:border-blue-500/50 shadow-blue-500/5',
+        red: 'from-red-500/10 to-transparent border-red-500/20 text-red-400 group-hover:border-red-500/50 shadow-red-500/5',
+        yellow: 'from-yellow-500/10 to-transparent border-yellow-500/20 text-yellow-400 group-hover:border-yellow-500/50 shadow-yellow-500/5',
+        emerald: 'from-emerald-500/10 to-transparent border-emerald-500/20 text-emerald-400 group-hover:border-emerald-500/50 shadow-emerald-500/5'
     };
 
     return (
-        <div className={`relative overflow-hidden bg-slate-900/50 backdrop-blur-md border rounded-2xl p-5 transition-all hover:scale-[1.02] hover:bg-slate-900/80 ${colorMap[color]}`}>
-            <div className="absolute top-0 right-0 p-3 opacity-10">
-                {React.cloneElement(icon as React.ReactElement, { size: 48 })}
+        <div className={`group relative overflow-hidden bg-slate-900/40 backdrop-blur-xl border rounded-[2rem] p-6 transition-all duration-500 hover:-translate-y-1 ${colorMap[color]} shadow-2xl`}>
+            <div className="absolute -right-4 -top-4 p-3 opacity-[0.03] transition-all duration-700 group-hover:scale-110 group-hover:rotate-12 group-hover:opacity-[0.07]">
+                {React.cloneElement(icon as React.ReactElement, { size: 120 })}
             </div>
-            <div className="flex items-center gap-3 mb-4">
-                <div className={`p-2 rounded-xl bg-slate-950/50 border border-white/5 ${colorMap[color]}`}>
+            <div className="flex items-center gap-4 mb-5 relative z-10">
+                <div className={`p-3 rounded-2xl bg-slate-950/80 border border-white/5 shadow-inner ${colorMap[color]}`}>
                     {icon}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">{title}</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{title}</span>
             </div>
-            <div className="flex items-end justify-between">
-                <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
+            <div className="flex items-end justify-between relative z-10">
+                <h3 className="text-4xl font-black text-white tracking-tighter">{value}</h3>
                 {trend && (
-                    <span className={`text-[10px] font-bold px-2 py-1 rounded-full bg-white/5 ${colorMap[color]}`}>
-                        {trend}
-                    </span>
+                    <div className="flex flex-col items-end">
+                        <span className={`text-[10px] font-black px-2 py-1 rounded-lg bg-white/5 border border-white/5 mb-1 ${colorMap[color]}`}>
+                            {trend}
+                        </span>
+                        <div className="h-1 w-12 bg-slate-800 rounded-full overflow-hidden">
+                            <div className={`h-full opacity-50 ${color === 'blue' ? 'bg-blue-500' : color === 'red' ? 'bg-red-500' : color === 'yellow' ? 'bg-yellow-500' : 'bg-emerald-500'} w-2/3`}></div>
+                        </div>
+                    </div>
                 )}
             </div>
         </div>
@@ -156,7 +167,7 @@ const App: React.FC = () => {
 
                 if (!scansRes.ok) throw new Error(`Scans API Offline`);
                 const scansData = await scansRes.json();
-                
+
                 if (statsRes.ok) {
                     const statsData = await statsRes.json();
                     if (!cancelled) setStats(statsData);
@@ -222,13 +233,16 @@ const App: React.FC = () => {
             {/* Sidebar */}
             <aside className="w-64 border-r border-slate-800 bg-slate-950/50 backdrop-blur-xl hidden lg:flex flex-col">
                 <div className="p-6">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-500/40">
-                            <Shield className="w-6 h-6 text-white" />
+                    <div className="flex items-center gap-4 mb-10">
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-blue-500 blur-lg opacity-40 animate-pulse"></div>
+                            <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 p-2.5 rounded-2xl shadow-xl border border-white/10">
+                                <Shield className="w-6 h-6 text-white" />
+                            </div>
                         </div>
-                        <h1 className="text-xl font-bold tracking-tight">PhishGuard <span className="text-blue-500">PRO</span></h1>
+                        <h1 className="text-xl font-black tracking-tighter text-white">PHISH<span className="text-blue-500">GUARD</span></h1>
                     </div>
-                    
+
                     <nav className="space-y-1">
                         {[
                             { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
@@ -308,7 +322,7 @@ const App: React.FC = () => {
                                             </h3>
                                             <button className="text-xs font-bold text-blue-500 hover:text-blue-400 transition-colors uppercase tracking-widest">Refresh logs</button>
                                         </div>
-                                        
+
                                         <div className="space-y-3">
                                             <AnimatePresence>
                                                 {scans.length === 0 ? (
@@ -322,7 +336,7 @@ const App: React.FC = () => {
                                                         className={`group relative overflow-hidden p-4 rounded-2xl transition-all cursor-pointer border ${selectedScan?.id === scan.id
                                                             ? 'bg-blue-600/10 border-blue-500/50'
                                                             : 'bg-slate-950/40 border-slate-800/50 hover:border-slate-700 hover:bg-slate-950/60'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         <div className="flex items-center justify-between relative z-10">
                                                             <div className="flex items-center gap-4 min-w-0">
@@ -337,7 +351,9 @@ const App: React.FC = () => {
                                                                     <div className="flex items-center gap-2 mt-1">
                                                                         <span className="text-[10px] font-bold text-slate-500 font-mono tracking-tighter">{scan.time}</span>
                                                                         <div className="w-1 h-1 rounded-full bg-slate-700"></div>
-                                                                        <span className="text-[10px] font-bold text-blue-500/70 uppercase">Heuristic Analysis</span>
+                                                                        <span className="text-[10px] font-bold text-blue-500/70 uppercase">
+                                                                            {scan.sender_info || "Heuristic Analysis"}
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -370,46 +386,48 @@ const App: React.FC = () => {
 
                                         {selectedScan ? (
                                             <div className="space-y-8">
-                                                <div className="h-56 w-full">
+                                                <div className="h-64 w-full flex justify-center">
                                                     <ResponsiveContainer width="100%" height="100%">
-                                                        <AreaChart data={chartData}>
-                                                            <defs>
-                                                                <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                                                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                                                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                                                                </linearGradient>
-                                                            </defs>
-                                                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                                                            <XAxis dataKey="name" stroke="#475569" fontSize={10} fontWeight="bold" axisLine={false} tickLine={false} />
-                                                            <YAxis hide domain={[0, 100]} />
-                                                            <Tooltip
-                                                                contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '12px', fontSize: '10px' }}
+                                                        <RadarChart cx="50%" cy="50%" outerRadius="80%" data={chartData}>
+                                                            <PolarGrid stroke="#1e293b" />
+                                                            <PolarAngleAxis dataKey="name" tick={{ fill: '#475569', fontSize: 10, fontWeight: 'bold' }} />
+                                                            <Radar
+                                                                name="Risk Score"
+                                                                dataKey="score"
+                                                                stroke="#3b82f6"
+                                                                fill="#3b82f6"
+                                                                fillOpacity={0.3}
                                                             />
-                                                            <Area type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
-                                                        </AreaChart>
+                                                            <Tooltip
+                                                                contentStyle={{ backgroundColor: '#020617', border: '1px solid #1e293b', borderRadius: '12px' }}
+                                                                itemStyle={{ color: '#3b82f6' }}
+                                                            />
+                                                        </RadarChart>
                                                     </ResponsiveContainer>
                                                 </div>
 
                                                 <div className="space-y-4">
-                                                    <div className="flex items-center justify-between p-4 bg-slate-950/50 border border-slate-800 rounded-2xl">
-                                                        <div>
-                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Risk Level</span>
-                                                            <span className={`text-sm font-black ${selectedScan.risk === 'PHISHING' ? 'text-red-500' : 'text-emerald-500'}`}>
+                                                    <div className="flex items-center justify-between p-4 bg-slate-950/50 border border-slate-800 rounded-2xl relative overflow-hidden group">
+                                                        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                                        <div className="relative z-10">
+                                                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-1">Risk Assessment</span>
+                                                            <span className={`text-sm font-black tracking-tight ${selectedScan.risk === 'PHISHING' ? 'text-red-500' : selectedScan.risk === 'SUSPICIOUS' ? 'text-yellow-400' : 'text-emerald-500'}`}>
                                                                 {selectedScan.risk} DETECTED
                                                             </span>
                                                         </div>
-                                                        <a href={selectedScan.url} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                        <a href={selectedScan.url} target="_blank" rel="noreferrer" className="relative z-10 p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
                                                             <ExternalLink size={14} className="text-slate-400" />
                                                         </a>
                                                     </div>
 
                                                     <div className="grid grid-cols-3 gap-3">
                                                         {[
-                                                            { key: 'Ling', val: selectedScan.layers.linguistic },
-                                                            { key: 'Vis', val: selectedScan.layers.visual },
-                                                            { key: 'Beh', val: selectedScan.layers.behavioral }
+                                                            { key: 'Ling', val: selectedScan.layers.linguistic, icon: Target },
+                                                            { key: 'Vis', val: selectedScan.layers.visual, icon: Activity },
+                                                            { key: 'Beh', val: selectedScan.layers.behavioral, icon: Cpu }
                                                         ].map((layer) => (
-                                                            <div key={layer.key} className="bg-slate-950/30 border border-slate-800/50 p-3 rounded-xl text-center">
+                                                            <div key={layer.key} className="bg-slate-950/30 border border-slate-800/50 p-3 rounded-xl text-center group transition-all hover:bg-slate-900/50 hover:border-blue-500/30">
+                                                                <layer.icon size={10} className="mx-auto mb-1 text-slate-600 group-hover:text-blue-500" />
                                                                 <span className="text-[8px] font-bold text-slate-500 uppercase block mb-1">{layer.key}</span>
                                                                 <span className={`text-xs font-bold ${layer.val > 70 ? 'text-red-500' : layer.val > 30 ? 'text-yellow-500' : 'text-emerald-500'}`}>
                                                                     {layer.val}%
@@ -417,13 +435,16 @@ const App: React.FC = () => {
                                                             </div>
                                                         ))}
                                                     </div>
-                                                    
-                                                    <div className="p-4 bg-blue-600/5 border border-blue-500/20 rounded-2xl">
-                                                        <div className="flex items-center gap-2 mb-3">
+
+                                                    <div className="p-4 bg-blue-600/5 border border-blue-500/20 rounded-2xl backdrop-blur-sm relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 p-3 opacity-5 pointer-events-none">
+                                                            <Zap size={40} />
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mb-3 relative z-10">
                                                             <Zap size={14} className="text-blue-500" />
                                                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">AI Forensic Briefing</span>
                                                         </div>
-                                                        <div className="space-y-2">
+                                                        <div className="space-y-2 relative z-10">
                                                             {[
                                                                 { score: selectedScan.layers.linguistic, details: selectedScan.layers.linguistic_details },
                                                                 { score: selectedScan.layers.visual, details: selectedScan.layers.visual_details },
@@ -432,9 +453,9 @@ const App: React.FC = () => {
                                                                 (layer.score > 0 || (layer.details && layer.details.length > 0)) && (
                                                                     (layer.details || "").split('|').map((finding, fIdx) => (
                                                                         finding.trim().length > 0 && (
-                                                                            <div key={`${lIdx}-${fIdx}`} className="flex items-start gap-2">
-                                                                                <div className={`w-1 h-1 rounded-full mt-1.5 shrink-0 ${layer.score > 70 ? 'bg-red-500' : layer.score > 30 ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
-                                                                                <p className="text-[11px] leading-relaxed text-slate-300 italic">
+                                                                            <div key={`${lIdx}-${fIdx}`} className="flex items-start gap-2 group/bullet">
+                                                                                <div className={`w-1 h-1 rounded-full mt-1.5 shrink-0 transition-all group-hover/bullet:scale-150 ${layer.score > 70 ? 'bg-red-500' : layer.score > 30 ? 'bg-yellow-500' : 'bg-blue-500'}`}></div>
+                                                                                <p className="text-[11px] leading-relaxed text-slate-400 group-hover/bullet:text-slate-100 italic transition-colors">
                                                                                     {finding.trim()}
                                                                                 </p>
                                                                             </div>
@@ -469,9 +490,9 @@ const App: React.FC = () => {
                                 </h3>
                                 <div className="relative w-full md:w-96">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search by URL or Threat Level..." 
+                                    <input
+                                        type="text"
+                                        placeholder="Search by URL or Threat Level..."
                                         className="w-full bg-slate-950/50 border border-slate-800 rounded-2xl py-3 pl-12 pr-4 text-sm focus:border-blue-500 outline-none transition-all"
                                     />
                                 </div>
@@ -495,20 +516,18 @@ const App: React.FC = () => {
                                                 <td className="px-6 py-4 rounded-l-2xl text-xs font-mono text-slate-500">#{scan.id}</td>
                                                 <td className="px-6 py-4 max-w-xs truncate font-semibold text-sm text-slate-200">{scan.url}</td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${
-                                                        scan.risk === 'PHISHING' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
+                                                    <span className={`text-[10px] font-bold px-3 py-1 rounded-full border ${scan.risk === 'PHISHING' ? 'bg-red-500/10 text-red-500 border-red-500/20' :
                                                         scan.risk === 'SUSPICIOUS' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                                                        'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                                    }`}>
+                                                            'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                                        }`}>
                                                         {scan.risk}
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
                                                         <div className="w-20 h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                                                            <div className={`h-full rounded-full ${
-                                                                scan.score > 70 ? 'bg-red-500' : scan.score > 30 ? 'bg-yellow-500' : 'bg-emerald-500'
-                                                            }`} style={{ width: `${scan.score}%` }}></div>
+                                                            <div className={`h-full rounded-full ${scan.score > 70 ? 'bg-red-500' : scan.score > 30 ? 'bg-yellow-500' : 'bg-emerald-500'
+                                                                }`} style={{ width: `${scan.score}%` }}></div>
                                                         </div>
                                                         <span className="text-xs font-bold font-mono">{scan.score.toFixed(1)}%</span>
                                                     </div>

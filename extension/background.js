@@ -1,49 +1,22 @@
 const DEFAULT_API_URL = "http://localhost:8000/api/v1/scan";
 
-function isPrivateOrLocalHost(hostname) {
-    if (!hostname) return false;
-    const h = String(hostname).toLowerCase();
-    if (h === "localhost") return true;
-    if (h.startsWith("127.")) return true;
-
-    // Very small/safe heuristic: only treat RFC1918 IPv4 as local.
-    const m = h.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (!m) return false;
-    const a = Number(m[1]);
-    const b = Number(m[2]);
-    if (![a, b, Number(m[3]), Number(m[4])].every(n => Number.isFinite(n) && n >= 0 && n <= 255)) return false;
-    if (a === 10) return true;
-    if (a === 192 && b === 168) return true;
-    if (a === 172 && b >= 16 && b <= 31) return true;
-    return false;
-}
-
-function deriveDefaultApiUrl(senderUrl) {
-    try {
-        const u = new URL(String(senderUrl || ""));
-        const host = u.hostname;
-        if (isPrivateOrLocalHost(host)) return `http://${host}:8000/api/v1/scan`;
-    } catch { }
-    return DEFAULT_API_URL;
-}
-
-async function getApiUrl(senderUrl) {
-    return await new Promise((resolve) => {
-        try {
-            chrome.storage.sync.get(["apiUrl"], (res) => {
-                resolve(res?.apiUrl || deriveDefaultApiUrl(senderUrl));
-            });
-        } catch {
-            resolve(deriveDefaultApiUrl(senderUrl));
-        }
+async function getApiUrl() {
+    return new Promise((resolve) => {
+        chrome.storage.sync.get(["apiUrl"], (res) => {
+            resolve(res.apiUrl || DEFAULT_API_URL);
+        });
     });
 }
 
-function updateStats(isBlocked) {
-    chrome.storage.local.get(["scannedCount", "blockedCount"], (res) => {
+function updateStats(isBlocked, lastScanUrl) {
+    chrome.storage.local.get(["scannedCount", "blockedCount", "lastScanUrl"], (res) => {
         const scannedCount = (res.scannedCount || 0) + 1;
         const blockedCount = (res.blockedCount || 0) + (isBlocked ? 1 : 0);
-        chrome.storage.local.set({ scannedCount, blockedCount });
+        chrome.storage.local.set({
+            scannedCount,
+            blockedCount,
+            lastScanUrl: lastScanUrl || res.lastScanUrl || ""
+        });
     });
 }
 
@@ -51,47 +24,54 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "scanPage") {
         let scanData = request.data;
         const senderUrl = sender?.tab?.url;
-        
-        // If it's an initial page load, we can capture a screenshot from the extension
+        const tabId = sender?.tab?.id;
+
         if (scanData.sender_info === "Initial page load" && sender.tab) {
             chrome.tabs.captureVisibleTab(sender.tab.windowId, { format: "jpeg", quality: 50 }, (dataUrl) => {
                 if (dataUrl) {
-                    scanData.screenshot = dataUrl.split(",")[1]; // Send just the base64 part
+                    scanData.screenshot = dataUrl.split(",")[1];
                 }
                 
-                scanPage(scanData, senderUrl)
+                scanPage(scanData, senderUrl, tabId)
                     .then(result => {
                         const isBlocked = result.risk_level === "PHISHING" || result.risk_level === "SUSPICIOUS";
-                        updateStats(isBlocked);
+                        updateStats(isBlocked, scanData?.url);
                         sendResponse({ status: "success", result: result });
                     })
                     .catch(error => {
                         sendResponse({ status: "error", message: error.message });
                     });
             });
-            return true; // Keep message channel open for async response
+            return true;
         }
 
-        scanPage(scanData, senderUrl)
+        scanPage(scanData, senderUrl, tabId)
             .then(result => {
                 const isBlocked = result.risk_level === "PHISHING" || result.risk_level === "SUSPICIOUS";
-                updateStats(isBlocked);
+                updateStats(isBlocked, scanData?.url);
                 sendResponse({ status: "success", result: result });
             })
             .catch(error => {
                 sendResponse({ status: "error", message: error.message });
             });
 
-        return true; 
+        return true;
+    } else if (request.action === "updateApiUrl") {
+        const newUrl = request.url;
+        chrome.storage.sync.set({ apiUrl: newUrl }, () => {
+            console.log(`PhishGuard: API URL updated to ${newUrl}`);
+            sendResponse({ status: "success" });
+        });
+        return true;
     }
 });
 
-async function scanPage(data, senderUrl) {
+async function scanPage(data, senderUrl, tabId) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout for AI analysis
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
-        const apiUrl = await getApiUrl(senderUrl);
+        const apiUrl = await getApiUrl();
         console.log(`PhishGuard: Sending scan request to ${apiUrl} for ${data.url}`);
         
         const response = await fetch(apiUrl, {
@@ -118,13 +98,21 @@ async function scanPage(data, senderUrl) {
         try {
             const score = Math.round(result.combined_score || 0).toString();
             const color = result.combined_score > 70 ? "#DC2626" : (result.combined_score > 30 ? "#F59E0B" : "#10B981");
-            chrome.action.setBadgeText({ text: score });
-            chrome.action.setBadgeBackgroundColor({ color: color });
+            if (Number.isInteger(tabId)) {
+                chrome.action.setBadgeText({ tabId, text: score });
+                chrome.action.setBadgeBackgroundColor({ tabId, color });
+            } else {
+                chrome.action.setBadgeText({ text: score });
+                chrome.action.setBadgeBackgroundColor({ color });
+            }
         } catch (badgeError) {}
 
         return result;
     } catch (error) {
         clearTimeout(timeoutId);
+        if (error?.name === "AbortError") {
+            throw new Error("Scan timed out (backend took too long or is unreachable)");
+        }
         throw error;
     }
 }

@@ -12,6 +12,13 @@
 **Root Cause:**
 The PhishGuard backend API is not running or not accessible.
 
+**If the reason mentions "aborted" / "timed out":**
+- The backend is reachable, but the scan is taking too long (the extension times out after ~15s).
+- This is usually caused by slow external lookups (LLM calls, WHOIS, redirects, screenshots).
+- Quick mitigations:
+  - Ensure your `GROQ_API_KEY` is valid (or accept that linguistic/vision will be skipped).
+  - Set `PHISHGUARD_DISABLE_PLAYWRIGHT=1` in `backend/.env` to avoid Playwright screenshot attempts in restricted environments.
+
 **Solution:**
 
 1. **Start the Backend API**
@@ -29,6 +36,11 @@ The PhishGuard backend API is not running or not accessible.
    ```
    
    You should see a response like: `{"status":"healthy"}`
+   
+   Alternative (versioned API):
+   ```bash
+   curl http://localhost:8000/api/v1/health
+   ```
 
 3. **Check Extension Configuration**
    - Click the PhishGuard extension icon
@@ -218,6 +230,16 @@ The PhishGuard backend API is not running or not accessible.
 
 **Symptoms:**
 - Legitimate sites flagged as phishing
+
+---
+
+### Quick Smoke Check (No Browser Required)
+
+Run a basic syntax sanity check for the extension + backend:
+
+```bash
+./smoke_check.sh
+```
 - Phishing sites marked as safe
 
 **Solution:**

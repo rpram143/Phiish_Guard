@@ -53,6 +53,11 @@ app.include_router(api_router, prefix="/api/v1")
 async def root():
     return {"status": "PhishGuard AI Engine is running", "version": "1.0.0"}
 
+@app.get("/health")
+async def health_root():
+    # Compatibility endpoint (some docs/tools expect /health instead of /api/v1/health)
+    return {"status": "healthy"}
+
 @app.websocket("/ws/scans")
 async def websocket_endpoint(websocket: WebSocket):
     await manager.connect(websocket)
